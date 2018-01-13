@@ -1,0 +1,3 @@
+table_set_default switchp_nhop drop
+table_add update_switchp set_switchp 10.1.1.1/24
+table_add switchp_nhop set_nhop 10.1.1.1/24 => 2
