@@ -114,6 +114,8 @@ SimpleSwitch::convertHashAlgorithm(cstring algorithm) {
         result = "random";
     else if (algorithm == v1model.algorithm.identity.name)
         result = "identity";
+    else if (algorithm == v1model.algorithm.jenkins_hash32.name)
+        result = "jenkins_hash32";
     else
         ::error("%1%: unexpected algorithm", algorithm);
     return result;
@@ -262,7 +264,8 @@ SimpleSwitch::convertExternFunctions(Util::JsonArray *result,
             v1model.algorithm.crc32.name, v1model.algorithm.crc32_custom.name,
             v1model.algorithm.crc16.name, v1model.algorithm.crc16_custom.name,
             v1model.algorithm.random.name, v1model.algorithm.identity.name,
-            v1model.algorithm.csum16.name, v1model.algorithm.xor16.name
+            v1model.algorithm.csum16.name, v1model.algorithm.xor16.name,
+            v1model.algorithm.jenkins_hash32.name
         };
 
         if (mc->arguments->size() != 5) {

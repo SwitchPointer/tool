@@ -117,7 +117,8 @@ enum HashAlgorithm {
     random,
     identity,
     csum16,
-    xor16
+    xor16,
+    jenkins_hash32
 }
 
 extern void mark_to_drop();

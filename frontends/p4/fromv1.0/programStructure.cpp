@@ -839,6 +839,8 @@ const IR::Expression* ProgramStructure::convertHashAlgorithm(IR::ID algorithm) {
         result = v1model.algorithm.identity.Id();
     } else if (algorithm == "csum16") {
         result = v1model.algorithm.csum16.Id();
+    } else if (algorithm == "jenkins_hash32") {
+        result = v1model.algorithm.jenkins_hash32.Id();
     } else if (algorithm == "xor16") {
         result = v1model.algorithm.xor16.Id();
     } else {
