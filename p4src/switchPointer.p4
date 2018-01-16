@@ -2,14 +2,16 @@
 #include <core.p4>
 #include <v1model.p4>
 
+//#define NO_KEYS 1048576
+//#define NO_BUCKETS 131072
+#define NO_KEYS 64
+#define NO_BUCKETS 16
 #define ALPHA 10
 #define K 3
-#define NO_BUCKETS 16
-#define NO_KEYS 64
 #define REG_BITS 32
 #define LOG_REG_BITS 5
 #define POINTER_SIZE NO_KEYS>>LOG_REG_BITS
-#define NO_32BIT_REGS (K * ALPHA * POINTER_SIZE)
+#define NO_32BIT_REGS (K * ALPHA * (POINTER_SIZE))
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -123,7 +125,7 @@ control MyIngress(inout headers hdr,
         
         level_pointer_idx.read(pointer_idx,level); 
         pointer_base=(level*ALPHA)+pointer_idx;
-        pointer_reg_idx=(pointer_base * POINTER_SIZE) + pointer_reg;
+        pointer_reg_idx=(pointer_base * (POINTER_SIZE)) + pointer_reg;
         pointers.read(pointer_val,pointer_reg_idx);
         pointer_val = pointer_val | (tmp_val << (bit<8>)pointer_reg_bit);
         pointers.write(pointer_reg_idx, pointer_val);
@@ -180,6 +182,7 @@ control MyIngress(inout headers hdr,
         res = (h2+g_h1) & (m-1);
         meta.fch_id = res;
         debug_reg.write(0,res);
+        debug_reg.write(1,NO_32BIT_REGS);
      
         reg_t pointer_reg;
         reg_t pointer_reg_bit;
