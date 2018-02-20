@@ -1,0 +1,166 @@
+\documentclass[10pt,onecolumn]{article}
+
+% \usepackage{usenix}
+\usepackage{times}
+\usepackage{fullpage}
+\paperwidth=8.5in    % letter paper size
+\paperheight=11in
+
+\usepackage{amsmath,amssymb}
+\usepackage{enumerate}
+\usepackage{balance}
+\usepackage{graphicx}
+\usepackage[font=bf]{caption}
+\captionsetup[subfigure]{labelsep=space,font=small}
+\usepackage{subfigure}
+\usepackage{soul}
+\usepackage{pifont}
+% \usepackage{verbatim}
+\usepackage{booktabs,multirow}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\usepackage{longtable}
+% \usepackage{algorithm}
+% \usepackage[noend]{algpseudocode}
+\usepackage[linesnumbered,lined,ruled,commentsnumbered]{algorithm2e}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes,arrows}
+\usetikzlibrary{calc}
+
+\usepackage{xspace}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,      % false: boxed links; true: colored links
+  linkcolor=blue,       % color of internal links
+  citecolor=magenta,    % color of links to bibliography
+  filecolor=cyan,       % color of file links
+  urlcolor=black,          % color of external links
+  urlcolor=magenta        % color of external links
+}
+
+% \usepackage{tcolorbox}
+% \newtcolorbox{mybox}[3][]
+% {
+%   colframe = #2!25,
+%   colback  = #2!10,
+%   coltitle = #2!20!black,
+%   title    = #3,
+%   #1,
+% }
+% \definecolor{boxcolor}{gray}{0.9}
+% \newenvironment{colframe}{%
+%   \begin{Sbox}
+%     \begin{minipage}{0.96\columnwidth}
+%     } {%
+%     \end{minipage}
+%   \end{Sbox}
+  % \begin{center}
+  %   \colorbox{boxcolor}{\TheSbox}
+  % \end{center}
+
+\newenvironment{tightlist}{
+\begin{list}{$\bullet$}{
+%    \setlength{\topsep}{0in} 
+    \setlength{\topsep}{.5em}
+    \setlength{\partopsep}{0in}
+    \setlength{\parskip}{0in}
+    \setlength{\itemsep}{0in}
+    \setlength{\parsep}{0in}
+    \setlength{\leftmargin}{1.0em}
+    \setlength{\rightmargin}{0in}
+    \setlength{\itemindent}{0in}
+}}
+{\end{list}}
+
+\newcommand{\secref}[1]{{\S\ref{#1}}}
+\newcommand{\fref}[1]{\mbox{Figure~\ref{#1}}}
+\newcommand{\tref}[1]{\mbox{Table~\ref{#1}}}
+
+\newcommand{\mypara}[1]{\smallskip\noindent\emph{#1}\xspace}
+\newcommand{\myparab}[1]{\vspace{0.075in}\noindent\textbf{#1}\xspace}
+\newcommand{\myparasc}[1]{\smallskip\noindent\textsc{#1}\xspace}
+\newcommand{\note}[1]{\textbf{[#1]}}
+
+\newcommand{\eg}{{\it e.g.}\xspace}
+\newcommand{\ie}{{\it i.e.}\xspace}
+\newcommand{\etal}{{\em et al.}\xspace}
+
+\newcommand{\eat}[1]{}
+\newcommand{\todo}[1]{\emph{TODO: #1}}
+
+\newcommand{\archp}{{PathDump}\xspace}
+\newcommand{\archs}{{SwitchPointer}\xspace}
+\newcommand{\rc}[1]{{\color{red}{#1}}}
+\newcommand{\bc}[1]{{\color{blue}{#1}}}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{mathdesign}
+\usepackage[mathcal]{euscript}
+\usepackage[T1]{fontenc}
+\usepackage[inline]{enumitem}
+
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+
+
+\usepackage{listings}
+\lstset{
+  aboveskip=3pt,
+  belowskip=3pt,
+  language=Python,
+  basicstyle=\ttfamily\small,
+  tabsize=4,
+}
+
+\usepackage{titlesec}
+% \titlespacing*{\section} {0pt}{2.5ex plus 1ex minus .2ex}{1.3ex plus .2ex}
+% \titlespacing*{\subsection} {0pt}{2.25ex plus 1ex minus .2ex}{0.5ex plus .2ex}
+\titlespacing*{\section} {0pt}{1.8ex plus 1ex minus .2ex}{0.8ex plus .2ex}
+\titlespacing*{\subsection} {0pt}{1.6ex plus 1ex minus .2ex}{0.4ex plus .2ex}
+
+% \usepackage{natbib}
+% \setlength{\bibsep}{5pt plus 0.3ex}
+
+\setlength{\abovecaptionskip}{.05in}
+\setlength{\belowcaptionskip}{-.15in}
+
+\clubpenalty=10000 
+\widowpenalty = 10000
+
+\begin{document}
+
+%don't want date printed
+\date{}
+
+\title{\Large \bf Example Debugging Applications using PathDump and SwitchPointer API}
+
+\author{
+  {\rm Praveen Tammana} \\
+  {University of Edinburgh}
+  \and
+  {\rm Rachit Agarwal} \\
+  {Cornell University}
+  \and
+  {\rm Myungjin Lee} \\
+  {University of Edinburgh}
+} % end author
+
+\maketitle
+
+%\thispagestyle{empty}
+%\pagestyle{empty}
+\input{interface}
+\input{apps}
+{ 
+\balance
+% \bibliographystyle{acm}
+\bibliographystyle{abbrv}
+\bibliography{paper}
+}
+
+\end{document}

@@ -1,0 +1,268 @@
+
+\newpage
+\section{Debugging applications}
+\begin{table}[!h]
+\centering
+{\small
+\ra{1.15}
+\begin{tabular}{C{2cm} L{6cm} L{9cm}}
+\toprule
+  %\multicolumn{1}{c}{\textbf{Application}} & \multicolumn{1}{c}{\textbf{Description}} & \multicolumn{1}{c}{\textbf{Pseudo code}} & \multicolumn{1}{c}{\textbf{Discussion}}\\
+  \textbf{Application}  &  \textbf{Description}  &  \textbf{Pseudo code} \\
+  %&  \textbf{Discussion} 
+  \midrule \midrule
+  Priority based flow contention  &  A low priority
+  						flow contends with one or more high priority flows at multiple
+  						switches present in the low priority flow's path. Debugging the poor performance of low priority flow requires maintaining temporal state (that is, flowIDs and packet priorities for all flows that the low priority flow contends with)
+  						and spatial state (same as temporal state but now at each switch). \newline
+  						The analyze function in pseudo code checks for at-least one 
+  						epochID is common between high priority flows and the low priority flow. 
+  					&	\textbf{Endhost:} \newline
+  						\texttt{tRange = (t1, t2) \newline
+  						flowIDs = getPoorTCPFlows(threshold, tRange) \newline
+						for fID in flowIDs: \newline
+						\hspace{0.3cm} pathInfo = getPathInfo(flowID, tRange) \newline
+						\hspace{0.3cm} Alarm(fID, POOR\_PERF, pathInfo) \newline }
+						\textbf{Controller:} \newline
+						\texttt{contendingFlows = getContendingFlows(fID, \newline
+						\hspace{6cm} pathInfo) \newline
+						analyze(contendingFlows) }	\\					
+					%&	The analyze function checks if high priority flows are present at any linkID with same epochID. \\
+	\midrule
+ Traffic cascades  &    A middle priority flow and a low priority flow contend 
+						at a downstream switch, because the middle priority 
+						flow packets at an upstream switch are delayed by a high 
+						priority flow. In the absence of the high priority flow, there would be no contention at the upstream switch. \newline 
+						The analyze function in the pseudo code checks for traffic cascades, first by looking for common epochIDs between middle and high priority flows at the upstream switch, and then between middle and low priority flows at the downstream switch. 
+					&	\textbf{Controller:} \newline
+						\texttt{fID = midPriorityFlowID \newline
+						pathInfo = midPriotiyFlowPathInfo \newline
+						contendingFlows = getContendingFlows(fID, \newline
+						\hspace{6cm} pathInfo) \newline
+						analyze(contendingFlows)} \\
+					%&	The analyze function checks for any common epochIDs for middle and high priority flow, and also for middle and low priority flow. \\
+\midrule
+Transient congestion diagnosis~\cite{trumpet} & Identify flows responsible for 
+										  transient congestion at a switch. It allows to check if flows of multiple applications (\eg, a heavy hitter and incast traffic) traverse a switch at the same time. Such an event might fill up switch buffer, causing high job finish time for the application that involves incast traffic.
+					& 	\textbf{Controller:} \newline
+						\texttt{linkID=(switchID,*), tRange=(t1, t2) \newline
+						flowStats=[] \newline
+						result = execute([switchID], getHosts(tRange)) \newline
+						for epochID, hostIDs in result: \newline
+						\hspace{0.3cm} result = execute(hostIDs, \newline
+						\hspace{0.3cm} \hspace{0.6cm} getTelemetryData(linkID, epochID)) \newline
+						\hspace{0.3cm} flowStats.append(result) \newline
+						analyze(flowStats) 
+						} \\
+					%&   to-do \\
+\midrule
+ECMP load imbalance diagnosis~\cite{loadimb} &  Through cross-comparison of the flow size distributions on the egress ports,
+					the operator can tell the degree of load imbalance.
+				&  	\textbf{Controller:} \newline
+					\texttt{result = {}; binsize = 10000 \newline
+					linkIDs = (l1, l2); tRange = (t1, t2) \newline
+					for lID in linkIDs: \newline
+					\hspace{0.3cm} switchID = lID[0] \newline
+					\hspace{0.3cm} result = execute([switchID], \newline
+					\hspace{4cm} getHosts(tRange)) \newline
+					for epochID, hostIDs in result: \newline
+					\hspace{0.3cm} flowStats = execute(hostIDs, \newline
+					\hspace{0.3cm} \hspace{0.6cm} getTelemetryData(linkID, epochID)) \newline
+					\hspace{0.3cm} for fStat in flowStats: \newline
+					\hspace{0.3cm} \hspace{0.2cm} result[lID][fStat.bytes/binsize] += 1 \newline
+					return result }  \\
+				%&  to-do \\
+
+\bottomrule
+\end{tabular}
+}
+\caption{Debugging applications.}
+\label{tbl:apps}
+\end{table}
+
+\newpage
+\begin{table}[!h]
+{\small
+\ra{1.15}
+\begin{tabular}{C{2cm} L{5cm} L{10cm}}
+\toprule
+  %\multicolumn{1}{c}{\textbf{Application}} & \multicolumn{1}{c}{\textbf{Description}} & \multicolumn{1}{c}{\textbf{Pseudo code}} & \multicolumn{1}{c}{\textbf{Discussion}}\\
+  \textbf{Application}  &  \textbf{Description}  &  \textbf{Pseudo code} \\
+  %&  \textbf{Discussion} \\
+\midrule \midrule
+
+Number of active 
+connections 			&  Find the number of active flows converge on the same switch interface in a short time period. This information allows to detect incast~\cite{dctcp} traffic at an egress port. Moreover, the sum of flow bytes in a short period might suggests the queue utilization.
+						&  \textbf{Controller:} \newline
+						   \texttt{linkID=(S1, S2), tRange=(t1, t2) \newline
+							flowIDs = [], bytes = 0, queue\_limit = 100KB; \newline	result = execute([S1], getHosts(tRange)) \newline
+							for epochID, hostIDs in result: \newline
+							\hspace{0.3cm} result = execute(hostIDs, \newline
+							\hspace{0.3cm} \hspace{0.6cm} getTelemetryData(linkID, epochID)) \newline
+							\hspace{0.3cm} for fStat in result: \newline
+							\hspace{0.3cm} \hspace{0.3cm} fStat.append(flowIDs) \newline
+							\hspace{0.3cm} \hspace{0.3cm} bytes += fStat.bytes \newline
+							\#Check if many flows are present in a long queue \newline
+							if len(flowIDs) > 25 and bytes > queue\_limit: \newline
+								\hspace{0.3cm} return (flowIDs, bytes)
+							} \\
+\midrule
+Silent random packet drop detection ~\cite{everflow} & A faulty switch interface drops packets at random without updating
+							 the discarded packet counters at respective interfaces.
+						   &    \textbf{Endhost:} \newline
+  								\texttt{tRange = (t1, t2) \newline
+  								flowIDs = getPoorTCPFlows(threshold, tRange) \newline
+								for fID in flowIDs: \newline
+								\hspace{0.3cm} pathInfo = getPathInfo(flowID, tRange) \newline
+								\hspace{0.3cm} Alarm(fID, POOR\_PERF, pathInfo) \newline }
+								\textbf{Controller:} \newline
+								\texttt{Runs localization algorithm such as MAX-COVERAGE
+								on the received paths that potentially include faulty links.} \\
+							%&   Every time an alarm is triggered, end-host sends the
+							%	path information of poor TCP flows. As more path data of suffering TCP flows get accumulated, the algorithm localizes faulty links more accurately. \\
+\midrule						
+Path \newline
+conformance~\cite{netsight,pathquery}	& 	Checks for policy violations on certain 												properties of the path taken by a particular 											{\tt flowID} (\eg, path length no more than $6$, 										or packets must avoid {\tt switchID}). The 												controller may {\texttt install} the following query									at the end-hosts.
+					&   \textbf{Endhost:} \newline
+						\texttt{Paths = getPaths(flowID, <*, *>, *) \newline
+								for path in Paths: \newline
+								\hspace{0.3cm} if len(path)>=6 or switchID in path: \newline
+								\hspace{0.3cm} \hspace{0.2cm} pathInfo = getPathInfo(flowID, *) \newline
+								\hspace{0.3cm} \hspace{0.2cm} result.append (pathInfo) \newline
+								if len(result) > 0: \newline
+								\hspace{0.3cm} Alarm (flowID, PC\_FAIL, result)  } \\
+					%& to-do \\	
+\midrule
+Traffic measurement & \archp allows to write queries for various													  measurements such as traffic matrix, heavy hitters, top-$k$ flows, and 						so forth. To obtain top-100 flows of a cloud service, the 							  		controller can execute this query at desired set of end-hosts 								participating in the service.
+					& 	\textbf{Endhost:} \newline
+						\texttt{h = []; linkID = (*, *); tRange = (t1, t2) \newline
+						flows = getFlows (linkID, tRange) \newline
+						for flow in flows: \newline
+						  \hspace{0.3cm}(bytes, pkts) = getCount (flow, tRange) \newline
+						  if len(h) < 100 or bytes > h[0][0]: \newline
+						    \hspace{0.3cm}if len(h) == 100: heapq.heappop (h) \newline
+						    \hspace{0.3cm}heapq.heappush (h, (bytes, flow)) \newline
+						return h }\\
+					%& to-do \\
+\midrule
+Isolation~\cite{netsight}  & Hosts in one group (A) should not talk with hosts in another 								 group (B). A group can be described by a set of host IP addresses (IP prefix). 
+						   & \textbf{Endhost:} \newline
+						   	 \texttt{grpA = A's IP prefix \newline
+						     grpB = B's IP prefix \newline
+						   	 tRange = (t1, t2) \newline
+						     flows = getFlows(<*,*>, tRange) \newline
+						     for fID in flows: \newline
+						     \hspace{0.3cm}	if fID.sIP in grpA and fID.dIP in grpB: \newline
+						     \hspace{0.3cm} \hspace{0.3cm} Alarm(flowID, ISOLATION\_FAIL, [])
+						     } \\
+						    %& to-do \\
+						%& to-do \\
+
+\eat{
+TCP In-cast			- 	Detect when many connections use a long queue 
+					-   based no of connections in a switch epoch.
+
+Count concurrently  - 	based on no of connections in a switch epoch
+active connections in 
+a queue 
+
+Heavy hitter 		-  Flow consuming x\% of link bandwidth
+
+
+%Per-packet query:
+High E2E latency - Capture packets experiencing high end-to-end queuing latency 						 - Inter-packet arrival time is high.
+
+TCP timeouts 	 - Count the number of timeouts for each TCP connection 								 - Inter-packet arrival time is around 300msec.
+
+Lossy connection - Compute packet loss per connection, and report conns with loss rate 					   greater than threshold 'p' 
+				 - No. of timeouts > 'p' * total no. of packets.
+
+Flowlet size histogram - Compute a histogram over the lengths of flowlets 									   - Based on inter-packet arrival
+
+TCP out-of-sequence - to-do  
+					- maintain prev packet seq, and compare it with current packet seq.
+TCP non-monotonic - Count packets with sequence number lesser than maximum seq number 						received so far 
+				   - maintain prev packet seq, increment counter if curr pkt's seq is less  than prev packet seq.
+
+}
+
+\bottomrule
+\end{tabular}
+}
+\caption{Debugging applications.}
+\label{tbl:apps}
+\end{table}
+
+\newpage
+\begin{table}[!h]
+{\small
+\ra{1.15}
+\begin{tabular}{C{2cm} L{5cm} L{10cm}}
+\toprule
+  %\multicolumn{1}{c}{\textbf{Application}} & \multicolumn{1}{c}{\textbf{Description}} & \multicolumn{1}{c}{\textbf{Pseudo code}} & \multicolumn{1}{c}{\textbf{Discussion}}\\
+  \textbf{Application}  &  \textbf{Description}  &  \textbf{Pseudo code} \\
+  %&  \textbf{Discussion} \\
+\midrule \midrule
+
+DDoS/\newline
+Superspreader
+detection				& A Superspreader host talks with more than  \textit{k}-destinations in a 								  specific time period. A DDoS victim is contacted by more 								than \textit{k} different sources in a specific time period. 
+						&  \textbf{Endhost:} \newline
+							\texttt{tRange = (t1, t2) \newline
+							flows = getFlows(<*,*>, tRange) \newline
+							ss = [], ddos = [] hID = hostID \newline
+							for fID in flows: \newline
+							\hspace{0.2cm}	if fID.sIP==hID and fID.dIP not in ss: \newline
+							\hspace{0.3cm} \hspace{0.3cm}		ss.append(fID.dIP) \newline
+							\hspace{0.2cm}	if fID.dIP==hID and fID.sIP not in ddos: \newline
+							 \hspace{0.3cm}\hspace{0.3cm}		ddos.append(fID.sIP) \newline
+							if len(ss) > k: \newline
+								\hspace{0.3cm} Alarm(flows, SS\_FOUND, []) \newline
+							if len(ddos) > k: \newline
+								\hspace{0.3cm} Alarm(flows, DDoS\_FOUND,[]) } \\
+\midrule
+
+Heavy hitter detection &  Find the flows consuming more than a certain percentage of link bandwidth. A controller may install a query at endhosts (see pseudo code) to monitor flows and their size at regular intervals. 
+
+					   & \textbf{Endhost:} \newline
+						 \texttt{tRange = (t1, t2) \newline
+						 hh\_size = 12MB  \#10\% of 1~Gbps link  \newline
+			  			 flows = getFlows(<*,*>, tRange) \newline
+			  			 for fID in flows: \newline
+			  			 	\hspace{0.3cm} (pkts, bytes) = getCount(fID, tRange) \newline
+			  			 	if bytes > hh\_size: \newline
+			  			 	\hspace{0.3cm} \hspace{0.3cm} Alarm(flowID, HH\_FOUND, []) 
+			  			 	 } \\
+\midrule
+High end-to-end latency  &  Capture flows that observe high inter-packet arrival times. The  {\tt getHighE2ELatencyFlows} query has a per-flow variable that captures arrival time of last seen packet. Upon arrival of a new packet, if the difference between arrival time of current and last seen packet is greater than delta, the query raises an alarm. 
+						  & \textbf{Controller:} \newline
+						  	\texttt{install(hIDs,Query=getHighE2ELatencyFlows(delta), 0)} \newline
+						  	\textbf{Endhost:} \newline
+						  	 \texttt{flowIDs = getHighE2ELatencyFlows(delta) \newline
+						  	 for fID in flowIDs: \newline
+						  	 \hspace{0.3cm} Alarm(fID, HIGH\_E2E\_LATENCY, []) 
+						  	 } \\
+\midrule
+Poor connections  &  Identify connections with a large number of timeouts. The {\tt getLossyFlows} query maintains a per-flow timeout counter. The counter is incremented if the inter-packet arrival time is greater than 300 msec. An alarm is raised when the timeout counter is greater than threshold times number of packets seen so far by a flow.
+						  & \textbf{Controller:} \newline
+						  	\texttt{install(hIDs, Query = getLossyFlows(Threshold), 0)} \newline
+						  	\textbf{Endhost:} \newline
+						  	 \texttt{flowIDs = getLossyFlows(Threshold) \newline
+						  	 for fID in flowIDs: \newline
+						  	 \hspace{0.3cm} Alarm(fID, TOO\_MANY\_TIMEOUTS, []) 
+						  	 } \\
+\midrule
+TCP out of order packets delivery
+   &  Report flows receiving packets out of order. The {\tt getAbnormalFlows} query has per-flow variable that stores the sequence number of last seen packet. The query raises an alarm, if the sequence number of newly arrived packet is less than the sequence number of last seen packet. & \textbf{Controller:} \newline
+				  	\texttt{install(hIDs, Query = getAbnormalFlows(), 0)} \newline
+				  	\textbf{Endhost:} \newline
+				  	 \texttt{flowIDs = getAbnormalFlows() \newline
+				  	 for fID in flowIDs: \newline
+				  	 \hspace{0.3cm} Alarm(fID, OUT\_OF\_ORDER, []) 
+				  	 } \\
+\bottomrule
+\end{tabular}
+}
+\caption{Debugging applications.}
+\label{tbl:apps}
+\end{table}

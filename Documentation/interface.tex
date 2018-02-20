@@ -1,0 +1,117 @@
+
+\section{Definitions}
+\archp and \archs exposes a simple interface for network debugging; see Table~\ref{tbl:interface}. We assume that each switch and host has a unique ID. We use the following definitions:
+\begin{center}
+\begin{itemize}[leftmargin=*, topsep=.3em, parsep=.2em]
+\itemsep0em
+  \item A {\tt linkID} is a pair of adjacent {\tt switchIDs} ($\langle \textrm{S}_\textrm{i}, \textrm{S}_\textrm{j} \rangle$);
+  \item A {\tt Path} is a list of {\tt switchIDs} ($\langle \textrm{S}_\textrm{i}, \textrm{S}_\textrm{j}, \dots \rangle$);
+  \item A {\tt flowID} is the usual $5$-tuple ($\langle$srcIP, dstIP, srcPort, dstPort, protocol$\rangle$);
+  \item A {\tt Flow} is a ($\langle$flowID, Path$\rangle$) pair; this will be useful for cases when packets from the same {\tt flowID} may traverse along multiple paths.
+  \item An {\tt epochID} represents an epoch in a switch.
+  \item A {\tt pathInfo} is a list of ($\langle${\tt linkID}, a list of {\tt epochIDs}$\rangle$) pairs, where {\tt linkID} represents a link that a specific flow traverse and the corresponding {\tt epochIDs} at the first switch ($\textrm{S}_\textrm{i}$) in a {\tt linkID}.
+  \item A {\tt flowStat} is a ($\langle$flowID, priority, byte counts$\rangle$) tuple.
+  \item A {\tt timeRange} is a pair of {\tt timestamps} ($\langle \textrm{t}_\textrm{i}, \textrm{t}_\textrm{j} \rangle$); 
+\end{itemize}
+\end{center}
+\archp and \archs support wildcard entries for {\tt switchIDs} and {\tt timestamps}. For instance, ($\langle \star, \textrm{S}_\textrm{j} \rangle$) is interpreted as all incoming links for switch $\textrm{S}_\textrm{j}$ and ($\langle \textrm{t}_\textrm{i}, \star \rangle$) is interpreted as ``since time $\textrm{t}_\textrm{i}$''.
+
+
+\section{Interface}
+Each host exposes the host API in Table~\ref{tbl:interface} and returns results for ``local'' flows, that is, for flows that have this host as their {\tt dstIP}. Similarly, each switch exposes the switch API and returns the hostIDs seen in an epoch. To collect the results distributed across individual end-hosts and switches, the controller may use the controller API --- to {\tt execute} a query at end-hosts or switches, to {\tt install} a query at end-hosts for periodic execution, or to {\tt uninstall} a query at end-hosts. For instance, to debug a network event, a controller use the controller API to locate, retrieve, and correlate the necessary data.
+\begin{table}
+\centering
+{\small
+\ra{1.15}
+\begin{tabular}{@{}l@{}p{3.85in}@{}}
+  \toprule
+  \multicolumn{1}{c}{\textbf{Host API}} & \multicolumn{1}{c}{\textbf{Description}} \\
+  \midrule
+  \texttt{getFlows(linkID, timeRange)} & Return list of {\tt flows} that traverse {\tt linkID} during specified {\tt timeRange}. \\
+  \texttt{getPaths(flowID, linkID, timeRange)} & Return list of {\tt Paths} that include {\tt linkID}, and are traversed by {\tt flowID} during specified {\tt timeRange}.\\
+                                                 % which a specified link ID is
+                                                 % present and are taken by a
+                                                 % flow(s) with flow ID  within a
+                                                 % given time range. \\
+
+  \texttt{getPathInfo(flowID, timeRange)} & Return {\tt pathInfo} of {\tt flowID} in specified {\tt timeRange}. \\
+  \texttt{getTelemetryData(linkID, epochID)} & Return list of {\tt flowStats} traversing the {\tt linkID} in an {\tt epochID}. \\
+
+  \texttt{getCount(Flow, timeRange)} & Return packet and byte counts of a {\tt flow}
+                                       within a specified {\tt timeRange}. \\
+  \texttt{getDuration(Flow, timeRange)} & Return the duration of a {\tt flow} within
+                                          a specified {\tt timeRange}. \\
+  \texttt{getPoorTCPFlows(Threshold, timeRange)} & Return the {\tt flowIDs} for
+                                        which {\tt protocol = TCP}, and the throughput in the current window is less than the threshold times previous window.  \\
+  \texttt{getHighE2ELatencyFlows(delta)} & Return the {\tt flowIDs} whose inter-arrival packet time is greater than the delta. \\
+  \texttt{getLossyFlows(Threshold)} & Return the {\tt flowIDs} whose {\tt protocol = TCP}, and the number of timeouts is greater than threshold times total number of packets received so far. \\
+  \texttt{getAbnormalFlows()} & Return the {\tt flowIDs} whose packets arrive in out of order. \\
+  \texttt{Alarm(flowID, Reason, pathInfo)} & Raise an alarm regarding
+                                             {\tt Flow} with a reason code (e.g., TCP
+                                             performance alert
+                                             (\texttt{POOR\_PERF})), and the {\tt pathInfo} of {\tt Flow} \\
+  \midrule
+  \multicolumn{1}{c}{\textbf{Switch API}} & \multicolumn{1}{c}{\textbf{Description}} \\
+  \midrule
+  \texttt{getHosts(epochID)} & Return list of {\tt hostIDs} traverse a switch in the {\tt epochID}. \\
+  \texttt{getHosts(timeRange)} & Return list of ($\langle${\tt epochID, hostIDs}$\rangle$) pairs, where the {\tt epochID} is in the {\tt timeRange}. \\
+  \midrule
+  \multicolumn{1}{c}{\textbf{Controller API}} & \multicolumn{1}{c}{\textbf{Description}} \\
+  \midrule
+
+ \texttt{execute(List$\langle$HostID/SwitchID$\rangle$,Query)} & Execute a {\tt Query} once at each host or switch specified in list of {\tt HostIDs} or {\tt SwitchIDs}; a {\tt Query} could be any of the ones from Host API or Switch API.\\
+   % constructed with host
+   %                                       APIs on a list of servers which are
+   %                                       presented as a tree structure
+   %                                       (\texttt{Tree}); \texttt{Agg}
+   %                                       specifies a code that does multi-level
+   %                                       data aggregation by referring to
+   %                                       \texttt{Tree}. \\
+  \texttt{install(List$\langle$HostID$\rangle$,Query,Period)} & Install a {\tt Query} at each host specified in list of {\tt HostIDs} to be executed at regular {\tt Periods}. If the {\tt Period} is not set, the query execution is triggered by a new event (\eg, receiving a packet).\\
+                                                 % a list of servers in
+                                                 % \texttt{Tree} and execute it at
+                                                 % regular intervals
+                                                 % (\texttt{Interval}); when an
+                                                 % interval is not set, the query
+                                                 % continuously processes online
+                                                 % flow path records of newly
+                                                 % arriving flows; note that
+                                                 % \texttt{execQuery()} carries
+                                                 % out one time execution of
+                                                 % a query on demand. \\
+  \texttt{uninstall(List$\langle$HostID$\rangle$,Query)} & Uninstall a {\tt Query} from each host specified in list of {\tt HostIDs}. \\
+
+
+  \texttt{getLinkEpochStats(linkID, epochID)} & Return list of {\tt flowStats} traversing {\tt linkID} in the {\tt epochID}. \\
+  \texttt{getContendingFlows(flowID, pathInfo)} &  Return list of {\tt flowStats}  contending with the {\tt flowID} across all links in the {\tt flowID} path. \\
+ 
+  \bottomrule
+\end{tabular}
+}
+\vspace{.05in}
+\caption{Interface.}
+\label{tbl:interface}
+\end{table}
+
+\begin{center}
+\begin{lstlisting}[xleftmargin=.2\textwidth]
+getLinkEpochStats(linkID, epochID):
+  SwitchID = linkID[0]  # first switch in the linkID
+  linkEpochStats = []
+  hostIDs = execute([switchID], Query = getHosts(epochID))
+  linkEpochStats = execute(hostIDs, Query = getTelemetryData(linkID, epochID))
+  return linkEpochStats
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\begin{lstlisting}[xleftmargin=.2\textwidth]
+getContendingFlows(flowID, pathInfo):
+  contendingFlows=[]
+  for linkID, epochIDs in pathInfo:
+    for eID in epochIDs:
+      linkEpochStats = getLinkEpochStats(linkID, eID)
+  contendingFlows.append((linkID, eID, linkEpochStats))
+  return contendingFlows
+\end{lstlisting}
+\end{center}
